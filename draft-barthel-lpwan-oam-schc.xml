@@ -147,12 +147,14 @@
     <t>OAM in LPWAN is a little bit trickier since the bandwidth is limited and
     extra traffic added by OAM can introduce perturbation on regular data transmission.</t>
 
-    <t>Two scenarios can be investigated:</t>
+<t>Three scenarios can be investigated:</t>
 
     <ul>
-      <li>OAM coming from the internet: As much as possible, the Network Gateway (NGW) should act as a proxy and handle the OAM traffic specifically.</li>
-      <li>OAM coming from LPWAN devices: This can be considered as regular devices but some specific devices may be installed in the LPWAN network to measure its quality.</li>
+      <li>OAM reachability messages coming from internet. In that case, the SCHC core should act as a proxy and handle specifically the OAM traffic.</li>
+      <li>OAM error messages coming from internet. In that case, the SCHC core should may forward à compressed version to the device.</li>
+      <li>OAM messages coming from LPWAN devices: This can be included into regular devices but some specific devices may be installed in the LPWAN network to measure its quality.</li>
     </ul>
+
 
     <t>The primitive functionalities of OAM are achieved with the ICMPv6 protocol.</t>
 
