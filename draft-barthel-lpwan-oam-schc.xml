@@ -104,7 +104,7 @@
     </address>
   </author>
 
-  <date year="2022"/>
+  <date year="2023"/>
 
   <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
         in the current day for you. If only the current year is specified, xml2rfc will fill 
@@ -150,8 +150,8 @@
 <t>Three scenarios can be investigated:</t>
 
     <ul>
-      <li>OAM reachability messages coming from internet. In that case, the SCHC core should act as a proxy and handle specifically the OAM traffic.</li>
-      <li>OAM error messages coming from internet. In that case, the SCHC core should may forward à compressed version to the device.</li>
+      <li>OAM reachability messages coming from internet. In that case, the core SCHC should act as a proxy and handle specifically the OAM traffic.</li>
+      <li>OAM error messages coming from internet. In that case, the core SCHC should may forward à compressed version to the device.</li>
       <li>OAM messages coming from LPWAN devices: This can be included into regular devices but some specific devices may be installed in the LPWAN network to measure its quality.</li>
     </ul>
 
@@ -554,13 +554,13 @@ This information can be useful to the Device, for example for reducing the repor
 Therefore, we compress the ICMPv6 message using SCHC and forward it to the Device over the LPWAN.</t>
 
 <figure title="Example of ICMPv6 error message sent back to the Device" anchor="Fig-ICMPv6-down"><artwork><![CDATA[
-     Device       NGW     core SCHC C/D                Internet Server
+     Device       NGW     core SCHC C/D                  Application
 
        |           |            |                            |
        | SCHC compressed IPv6   |                            |
-       |~~~~~~~~~~~|----------->|----------------------X     |
+       |~~~~~~~~~~~|~~~~~~~~~~~>|----------------------X     |
        |           |            | <---------------------     |
-       |<~~~~~~~~~~|------------| ICMPv6 Host unreachable    |
+       |<~~~~~~~~~~|~~~~~~~~~~~~| ICMPv6 Host unreachable    |
        |SCHC compressed ICMPv6  |                            |
        |           |            |                            |
        |           |            |                            |
@@ -596,6 +596,7 @@ For the Packet Too Big message, it contains the MTU.
 For the Parameter Error message, it containts a pointer to the byte causing the error.
 Therefore, Value is never expected to be greater than 1280 in LPWAN networks.</t>
 
+
 <t>The following generic rule can therefore be used to compress all ICMPv6 error messages as defined today.
 More specific rules can also be defined to achieve better compression of some error messages.</t>
 
@@ -603,6 +604,9 @@ More specific rules can also be defined to achieve better compression of some er
 bits. Code can be reduced to 3 bits using the LSB CDA. Value can be sent on 11 bits using the LSB
 CDA, but if the Device is known to send smaller packets, then the size of this field can
 be further reduced.</t>
+
+<t>Value MUST be present in all rules, even if the ICMP message marks it as unused. In that case, the rule MUST ignore it.</t>
+
 
 <t>By <xref target="RFC4443"/>, the rest of the ICMPv6 message must contain as much as possible of the IPv6 offending (invoking) packet that triggered
 this ICMPv6 error message. This information is used to try and identify the SCHC rule that
@@ -619,6 +623,8 @@ sent in the compressed ICMPv6 message to the Device.</t>
 <t>TODO: the erroneous IPv6 packet header (not just the Rule Id) should be sent back. This includes the Rule Id and the compression residue. This means the SCHC C/D uses the context backwards (in the reverse direction). How does the Device know it must also use the context backwards?</t>
 
 <t>TODO: how does one know that the “payload” of a compressed-header packet is in fact another compressed header?</t>
+
+<t>TODO explain the payload field and the associates MO/CDA</t>
 
 </section>
 </section>
