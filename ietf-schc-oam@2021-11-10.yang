@@ -56,37 +56,46 @@ module ietf-schc-oam {
   identity fid-icmpv6-base-type {
     base schc:fid-base-type;
     description
-      "Field IP base type for UDP headers described in RFC 768";
+      "Field IP base type for ICMPv6 headers described in RFC 4443";
+    reference 
+      "RFC 4443   Internet Control Message Protocol (ICMPv6)
+                  for the Internet Protocol Version 6 (IPv6) Specification";
   }
 
   identity fid-icmpv6-type {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 field (see draft OAM)";
+      "ICMPv6 type field";
   }
 
   identity fid-icmpv6-code {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 field (see draft OAM)";
+      "ICMPv6 code field";
   }
 
   identity fid-icmpv6-checksum {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 field (see draft OAM)";
+      "ICMPv6 checksum field";
   }
 
   identity fid-icmpv6-identifier {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 field (see draft OAM)";
+      "ICMPv6 identifier field";
   }
 
   identity fid-icmpv6-sequence {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 field (see draft OAM)";
+      "ICMPv6 sequence number field";
+  }
+
+  identity fid-icmpv6-value {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 value field, unused for ";
   }
 
   identity  proxy-schc-message{
