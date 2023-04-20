@@ -382,7 +382,12 @@ allowing a serie of 255 consecutive pings.</t>
 
 <section anchor="device-is-pinged" title="Device is ping'ed">
 
-<t>If the Device is ping’ed (i.e., is the destination of an Echo Request message), the default behavior is to avoid
+<t>If the Device is ping’ed (i.e., is the destination of an Echo Request message), the 
+device can receives the compress message and generate an Echo. In that case, the fields
+sequence number and identifier cannot be compressed if the source is not aware of 
+the compression scheme.</t>
+
+<t> But the default behavior is to avoid
 propagating the Echo Request message over the LPWAN.</t>
 
 <!--This is the recommended behavior with the Code 0 (default value) of the Echo Request message.-->
@@ -404,11 +409,11 @@ During this interval, the proxy-ping echoes ping requests, after this duration, 
 
               SCHC packet
     ---|~~~~~~~~~~~~~~~~~~~~~~~>|    Echo Request, Code=0    |
-     | |           |            |<---------------------------|
-     | |           |            |                            |
-     | |           |            |--------------------------->|
-     X |           |            |    Echo Reply,   Code=0    |
-       |           |            |                            |
+ l t | |           |            |<---------------------------|
+ i i | |           |            |                            |
+ f m | |           |            |--------------------------->|
+ e e X |           |            |    Echo Reply,   Code=0    |
+   r   |           |            |                            |
        |           |            |                            |
        |           |            |    Echo Request, Code=0    |
        |           |            |O---------------------------|
@@ -544,18 +549,26 @@ The incorrect packets should be caught at the core SCHC C/D and the ICMPv6 notif
 
 ]]></artwork></figure>
 
-<t><xref target="Fig-ICMPv6-up"/> shows an example of an IPv6 packet trying to reach a Device. Let’s assume that the port number used
-as destination port is not “known” (needs better definition) from the core SCHC C/D. Instead of sending the packet over
+<t><xref target="Fig-ICMPv6-up"/> shows an example of an IPv6 packet trying to reach a Device. </t>
+
+<!-- Let’s assume that the port number used
+as destination port is not “known” (needs better definition) from the core SCHC C/D. 
+-->
+
+<t>Let's assume that no rule matches the incoming packet (i.e. there is no co-compression rule)</t>
+
+<t>Instead of sending the packet over
 the LPWAN and having this packet rejected by the Device, the core SCHC C/D issues
 an ICMPv6 error message “Destination Unreachable” (Type 1) with Code 1 (“Port Unreachable”) on behalf of the Device.</t>
 
-<t>In that case the SCHC C/D acts as a router and MUST have a routable IPv6 address to generate
-an ICMPv6 message. when compressing a packet containing an IPv6 header, no compression rules are found and:
+<t>In that case the SCHC C/D MAY act as a router (i.e. it MUST have a routable IPv6 address to generate
+an ICMPv6 message). When compressing a packet containing an IPv6 header, no compression rules are found and:
 * if a rule contains some extension headers, a parameter problem may be generated (type 4),
-* no rules contains the IPv6 prefix, a no route to destination ICMPv6  message (type 0, code 0) may be generated,
-* a prefix is found, but no devIID matches, a address unreachable ICMPv6  message (type 0, code 3) may be generated,
+* no rules contains the IPv6 device address found in the incoming packet, a no route to destination ICMPv6  message (type 0, code 3) may be generated,
+<!--* a prefix is found, but no devIID matches, a address unreachable ICMPv6  message (type 0, code 3) may be generated,-->
 * a device IPv6 address is found, but no port matches,  a port unreachable ICMPv6  message (type 0, code 4) may be generated,</t>
 
+<!-- LT: I suppress type 0 code 0, if the packet arrives to the core SCHC, this means that there is a correct prefix. -->
 <t>TODO: This assumes that all ports that the Device listens to will be matched by a SCHC rule. Is this the basic assumption of SCHC that all packets that do not match a rule are rejected? If yes, why do have fragmentation also for uncompressed packets?</t>
 
 <t>TODO: discuss the various Type/Code that are expected to be generated in response to various errors.</t>
@@ -565,9 +578,10 @@ an ICMPv6 message. when compressing a packet containing an IPv6 header, no compr
 <section anchor="device-is-the-destination-of-an-icmpv6-error-message" title="Device is the destination of an ICMPv6 error message">
 
 <t>In this situation, we assume that a Device has been configured to send information to a server on the Internet. If this
-server becomes no longer accessible, an ICMPv6 message will be generated back towards the Device by an intermediate router.
+server becomes no longer accessible, an ICMPv6 message will be generated back towards the Device by either an intermediate router or the destination.
 This information can be useful to the Device, for example for reducing the reporting rate in case of periodic reporting of data.
-Therefore, we compress the ICMPv6 message using SCHC and forward it to the Device over the LPWAN.</t>
+Therefore, we compress the ICMPv6 message using SCHC and forward it to the Device over the LPWAN. We also introduce new MO and CDA
+that can be used to test the presence and/or compress the returning payload.</t>
 
 <figure title="Example of ICMPv6 error message sent back to the Device" anchor="Fig-ICMPv6-down"><artwork><![CDATA[
      Device       NGW     core SCHC C/D                Internet Server
@@ -575,10 +589,10 @@ Therefore, we compress the ICMPv6 message using SCHC and forward it to the Devic
        |           |            |                            |
        | SCHC compressed IPv6   |                            |
        |~~~~~~~~~~~|----------->|----------------------X     |
-       |           |            | <---------------------     |
+       |           |            |<---------------------      |
        |<~~~~~~~~~~|------------| ICMPv6 Host unreachable    |
-       |SCHC compressed ICMPv6  |                            |
-       |           |            |                            |
+       |SCHC compressed ICMPv6  | payload: IPv6 packet       |
+       |payload: compressed IPv6|                            |
        |           |            |                            |
 
 
@@ -586,6 +600,10 @@ Therefore, we compress the ICMPv6 message using SCHC and forward it to the Devic
 
 <t><xref target="Fig-ICMPv6-down"/> illustrates this behavior. The ICMPv6 error message is compressed
 as described in <xref target="ErrMsgCompr"/> and forwarded over the LPWAN to the Device.</t>
+
+<t>The SCHC returning message contains the SCHC residue of the ICMPv6 message and MAY contain the
+compressed original message contained in the ICMP message. The compression can be done by the core SCHC
+by reversing the direction as if this message was issued by the device.</t>
 
 <section anchor="ErrMsgCompr" title="ICMPv6 error message compression.">
 
@@ -598,7 +616,7 @@ as described in <xref target="ErrMsgCompr"/> and forwarded over the LPWAN to the
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
       |     Type      |     Code      |          Checksum             |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      |                            Value                              |
+      |                           Value/Unused                        |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
       |                    As much of invoking packet                 |
       +                as possible without the ICMPv6 packet          +
@@ -611,6 +629,10 @@ Value is unused for the Destination Unreachable and Time Exceeded messages. It c
 the Packet Too Big message and a pointer to the byte causing the error for the Parameter Error message.
 Therefore, Value is never expected to be greater than 1280 in LPWAN networks.</t>
 
+<t>The payload is viewed as a field. An unsued field MUST not appear in the compressoin rules.</t>
+
+<t>The source address of the message SHOULD be ignore, since it can be initiated by any router on the path.</t>
+
 <t>The following generic rule can therefore be used to compress all ICMPv6 error messages as defined today.
 More specific rules can also be defined to achieve better compression of some error messages.</t>
 
@@ -619,12 +641,180 @@ bits. Code can be reduced to 3 bits using the LSB CDA. Value can be sent on 11 b
 CDA, but if the Device is known to send smaller packets, then the size of this field can
 be further reduced.</t>
 
+<t>The first rule example <xref target="Fig-icmp-error1"/> just sends the ICMP type and code as residue to the device.</t>
+
+<table anchor="Fig-icmp-error1" align="center">
+  <name>Example of compression rule for a ICMP error to a device</name>
+  <thead>
+    <tr>
+      <th align="left">Field</th>
+      <th align="left">FL</th>
+      <th align="left">FP</th>
+      <th align="left">DI</th>
+      <th align="left">Value</th>
+      <th align="left">Matching Operator</th>
+      <th align="left">CDA</th>
+      <th align="left"></th>
+      <th align="left">Sent bits</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td align="center" colspan="9"><em>IPv6 Headers description</em></td></tr>
+    <tr>
+      <td align="left">ICMPv6 Type</td>
+      <td align="left">8</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">128</td>
+      <td align="left">equal</td>
+      <td align="left">not-sent</td>
+      <td align="left"></td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="left">ICMPv6 Code</td>
+      <td align="left">8</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">[0,1,2,3,4,5,6]</td>
+      <td align="left">match-mapping</td>
+      <td align="left">mapping-sent</td>
+      <td align="left"></td>
+      <td align="left">3</td>
+    </tr>
+    <tr>
+      <td align="left">ICMPv6 Payload</td>
+      <td align="left">var</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">0</td>
+      <td align="left">ignore</td>
+      <td align="left">not-sent</td>
+      <td align="left"></td>
+      <td align="left"></td>
+    </tr>
+  </tbody>
+</table>
+
+<t>The second rule example <xref target="Fig-icmp-error2"/> also only sends the ICMP type and code as residue to the device, 
+but it introduces the new MO "rev-rule-match". This MO will check if a rule matches the payload. </t>
+
+<table anchor="Fig-icmp-error2" align="center">
+  <name>Example of compression rule for a ICMP error to a device</name>
+  <thead>
+    <tr>
+      <th align="left">Field</th>
+      <th align="left">FL</th>
+      <th align="left">FP</th>
+      <th align="left">DI</th>
+      <th align="left">Value</th>
+      <th align="left">Matching Operator</th>
+      <th align="left">CDA</th>
+      <th align="left"></th>
+      <th align="left">Sent bits</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td align="center" colspan="9"><em>IPv6 Headers description</em></td></tr>
+    <tr>
+      <td align="left">ICMPv6 Type</td>
+      <td align="left">8</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">128</td>
+      <td align="left">equal</td>
+      <td align="left">not-sent</td>
+      <td align="left"></td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="left">ICMPv6 Code</td>
+      <td align="left">8</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">[0,1,2,3,4,5,6]</td>
+      <td align="left">match-mapping</td>
+      <td align="left">mapping-sent</td>
+      <td align="left"></td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="left">ICMPv6 Payload</td>
+      <td align="left">var</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">0</td>
+      <td align="left">rev-rule-match</td>
+      <td align="left">not-sent</td>
+      <td align="left"></td>
+      <td align="left"></td>
+    </tr>
+  </tbody>
+</table>
+
 <t>By <xref target="RFC4443"/>, the rest of the ICMPv6 message must contain as much as possible of the IPv6 offending (invoking) packet that triggered
 this ICMPv6 error message. This information is used to try and identify the SCHC rule that
 was used to decompress the offending IPv6 packet. If the rule can be found then the Rule Id
 is added at the end of the compressed ICMPv6 message. Otherwise the compressed
 packet ends with the compressed Value field.</t>
 
+<t>The third rule example <xref target="Fig-icmp-error3"/> also sends the ICMP type, code and the compresssed payload as residue.
+It can be noted that this field is identified as "variable" in the rule which will introduce a size before the IPv6 compressed header. </t>
+
+<table anchor="Fig-icmp-error3" align="center">
+  <name>Example of compression rule for a ICMP error to a device</name>
+  <thead>
+    <tr>
+      <th align="left">Field</th>
+      <th align="left">FL</th>
+      <th align="left">FP</th>
+      <th align="left">DI</th>
+      <th align="left">Value</th>
+      <th align="left">Matching Operator</th>
+      <th align="left">CDA</th>
+      <th align="left"></th>
+      <th align="left">Sent bits</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td align="center" colspan="9"><em>IPv6 Headers description</em></td></tr>
+    <tr>
+      <td align="left">ICMPv6 Type</td>
+      <td align="left">8</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">128</td>
+      <td align="left">equal</td>
+      <td align="left">not-sent</td>
+      <td align="left"></td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="left">ICMPv6 Code</td>
+      <td align="left">8</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">[0,1,2,3,4,5,6]</td>
+      <td align="left">match-mapping</td>
+      <td align="left">mapping-sent</td>
+      <td align="left"></td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="left">ICMPv6 Payload</td>
+      <td align="left">var</td>
+      <td align="left">1</td>
+      <td align="left">Dw</td>
+      <td align="left">0</td>
+      <td align="left">rev-rule-match</td>
+      <td align="left">rev-compress-sent</td>
+      <td align="left"></td>
+      <td align="left">(compressed IPv6 header*9) + 4 or +12</td>
+    </tr>
+  </tbody>
+</table>
+
+<!---
 <t><xref target="RFC4443"/> states that the “ICMPv6 error message MUST include as much
 of the IPv6 offending (invoking) packet … as possible”.
 In order to comply with this requirement, if there is enough information in the incoming ICMPv6 message for the core SCHC C/D to
@@ -633,61 +823,17 @@ sent in the compressed ICMPv6 message to the Device.
 TODO: the erroneous IPv6 packet header (not just the Rule Id) should be sent back. This includes the Rule Id and the compression residue. This means the SCHC C/D uses the context backwards (in the reverse direction). How does the Device know it must also use the context backwards?</t>
 
 <t>TODO: how does one know that the “payload” of a compressed-header packet is in fact another compressed header?</t>
-
+-->
+<t>LT: do we add packet too big, for instance if a fragmentation rule cannot handle a size larger than 1280?</t>
 </section>
 </section>
 </section>
 
-<section anchor="traceroute" title="Traceroute">
 
-<t>The traceroute6 program sends successive probe packets destined to a chosen target
-but with the Hop Limit value successively incremented from the initial value 1.</t>
-
-<t>It expects to receive a “Time Exceeded” (Type = 3) “Hop Limit” (Code = 0) ICMPv6 error message back from the successive routers along the path to the destination.</t>
-
-<t>The probe packet is usually a UDP datagram, but can also be a TCP datagram or even an ICMPv6 message.
-The destination port is chosen in the unassigned range in hope that the destination, when eventually reached,
-will respond with a “Destination Unreachable” (Type = 1) “Port Unreachable” (Code = 4) ICMPv6 error message.</t>
-
-<t>It is not anticipated that a Device will want to traceroute a destination on the Internet.</t>
-
-<t>By contrast, a host on the Internet may attempt to traceroute an IPv6 address that is assigned to an LPWAN device. This is described in <xref target="Fig-traceroute"/>.</t>
-
-<figure title="Example of traceroute to the LPWAN Device" anchor="Fig-traceroute"><artwork><![CDATA[
-     Device       NGW     core SCHC C/D                 Internet 
-
-       |           |            | Hop Limit=1, Dest Port=XXX |
-       |           |            |<---------------------------|
-       |           |            |                            |
-       |           |            |--------------------------->|
-       |           |            |   ICMPv6 Hop Limit error   |
-       |           |            |                            |
-       |           |            |                            |
-       |           |            | Hop Limit=2, Dest Port=XXX |
-       |           |            |<---------------------------|
-       |           |            |                            |
-       |           |            |--------------------------->|
-       |           |            |  ICMPv6 Port Unreachable   |
-
-
-]]></artwork></figure>
-
-<t>When the probe packet first reaches the core SCHC C/D, its remaining Hop Limit is 1. The core SCHC C/D will
-respond back with a “Time Exceeded” (Type = 3) “Hop Limit” (Code = 0) ICMPv6 error message.
-Later on, when the probe packet reaches the code SCHC C/D with a Hop Limit value of 2, the core SCHC C/D will,
-as explained in <xref target="ProxyErrMsg"/>, answer back with a “Destination Unreachable” (Type = 1) “Port Unreachable” (Code = 4) ICMPv6 error message.
-This is what the traceroute6 command expects.
-Therefore, the traceroute6 command will work with LPWAN IPv6 destinations, except for the time displayed for the destination, which is actually the time to its proxy.</t>
-
-<t>However, if the probe packet happens to hit a port that matches a SCHC rule for that Device, the packet will be compressed with this rule and sent over the LPWAN, which is unfortunate.
-Forwarding of packets to the Device over the LPWAN should only be done from authenticated/trusted sources anyway.
-Rate-limitation on top of authentication will mitigate this nuisance.</t>
-
-</section>
 
 <section anchor="security-considerations" title="Security considerations">
 
-<t>TODO</t>
+<t>flood the return path with ICMP error messages.</t>
 
 </section>
 <section anchor="iana-considerations" title="IANA Considerations">
