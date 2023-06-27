@@ -128,6 +128,11 @@
         keywords will be used for the search engine. -->
 
   <abstract>
+
+  <t>This document describes ICMPv6 compression with SCHC and how basic OAM is performed on Low Power Wide Area Networks (LPWANs)
+    by compressing ICMPv6/IPv6 headers
+    and by protecting the LPWAN network and the Device from undesirable ICMPv6 traffic.</t>
+
     <t>With IP protocols now generalizing to constrained networks, users expect to be able to Operate, Administer and Maintain them 
     with the familiar tools and protocols they already use on less constrained networks.</t>
 
@@ -146,14 +151,15 @@
     <t>OAM in LPWAN is a little bit trickier since the bandwidth is limited and
     extra traffic added by OAM can introduce perturbation on regular transmission.</t>
 
-    <t>Four scenarios are investigated:</t>
+    <t>Three main scenarios are investigated:</t>
 
     <ul>
       <li>OAM reachability messages coming from internet. In that case, the SCHC core should act as a 
           proxy and handle specifically the OAM traffic.</li>
-      <li>OAM error messages coming from internet. In that case, the SCHC core should may forward 
+      <li>OAM messages initiated by LPWAN devices: They can be anticipated by the core SCHC.</li>
+
+      <li>OAM error messages coming from internet. In that case, the SCHC core may forward 
           a compressed version to the device.</li>
-      <li>OAM messages initiated by LPWAN devices: They can be anticipated by the core z SCHC.</li>
     </ul>
 
     <t>The primitive functionalities of OAM are achieved with the ICMPv6 protocol.</t>
@@ -161,11 +167,6 @@
     <t>ICMPv6 defines messages that inform the source of IPv6 packets of errors during packet delivery.
     It also defines the Echo Request/Reply messages that are used for basic network troubleshooting (ping command).
     ICMPv6 messages are transported on IPv6.</t>
-
-    <t>This document describes
-    how basic OAM is performed on Low Power Wide Area Networks (LPWANs)
-    by compressing ICMPv6/IPv6 headers
-    and by protecting the LPWAN network and the Device from undesirable ICMPv6 traffic.</t>
 
     <t>This document also introduces the notion of actions in a SCHC rule, to perform locally some operations.</t>
 
@@ -265,7 +266,7 @@ in the rule to be 128 and 0 and can therefore be elided with the not-sent CDA.</
 “aid in matching Echo Replies to this Echo Request” and that they “may be zero”.
 Data is “zero or more bytes of arbitrary data”.</t>
 
-<t>For contrained devices or networks, we recommend that Identifier be zero, Sequence Number 
+<t>For constrained devices or networks, we recommend that Identifier be zero, Sequence Number 
 be a counter on 3 bits, and Data be zero bytes (absent). Therefore, Identifier is elided with the 
 not-sent CDA, Sequence Number is transmitted on 3 bits with the LSB CDA and no Data is transmitted.</t>
 
@@ -280,7 +281,9 @@ This message bears the same format as the Echo Request message but with Type = 1
 message shall contain the same values as the invoking Echo Request message. Therefore, a rule shall be used 
 similar to that used for compressing the Echo Request message.</t>
 
-<t>TODO: how about a shared rule for Echo Request and Echo Reply with an LSB(1) CDA on the Type field? Or exploiting the Up/Down direction field in the rule?</t>
+<!--
+  <t>TODO: how about a shared rule for Echo Request and Echo Reply with an LSB(1) CDA on the Type field? Or exploiting the Up/Down direction field in the rule?</t>
+-->
 
 <section anchor="rule-example" title="Rule example">
 
@@ -385,7 +388,7 @@ allowing a serie of 255 consecutive pings.</t>
 <section anchor="device-is-pinged" title="Device is ping'ed">
 
 <t>If the Device is ping’ed (i.e., is the destination of an Echo Request message), the 
-device can receives the compress message and generate an Echo. In that case, the fields
+device receives the compress message and generate an Echo. In that case, the fields
 sequence number and identifier cannot be compressed if the source is not aware of 
 the compression scheme.</t>
 
@@ -398,7 +401,7 @@ propagating the Echo Request message over the LPWAN.</t>
 This requires to introduce a new processing when the rule is selected.
 The selection of a compression rule triggers the compression and sends the SCHC
 packet to the other end. Specifying an Action, change this behavior.
-In our case, instead of been processed by the compressor, the packet description is processed by a ping proxy.
+In our case, being processed by the compressor, the packet description is processed by a ping proxy.
 Since the rule is used for the selection, so CDAs are not necessary and set to "not-sent".</t>
 
 <t>The ping-proxy takes a parameter in second, gives the interval during which the device is considered active.  
@@ -566,15 +569,17 @@ an ICMPv6 error message “Destination Unreachable” (Type 1) with Code 1 (“P
 <t>In that case the SCHC C/D MAY act as a router (i.e. it MUST have a routable IPv6 address to generate
 an ICMPv6 message). When compressing a packet containing an IPv6 header, no compression rules are found and:
 * if a rule contains some extension headers, a parameter problem may be generated (type 4),
-* no rules contains the IPv6 device address found in the incoming packet, a no route to destination ICMPv6  message (type 0, code 3) may be generated,
+* no rule contains the IPv6 device address found in the incoming packet, a no route to destination ICMPv6  message (type 0, code 3) may be generated,
 <!--* a prefix is found, but no devIID matches, a address unreachable ICMPv6  message (type 0, code 3) may be generated,-->
 * a device IPv6 address is found, but no port matches,  a port unreachable ICMPv6  message (type 0, code 4) may be generated,</t>
 
 <!-- LT: I suppress type 0 code 0, if the packet arrives to the core SCHC, this means that there is a correct prefix. -->
-<t>TODO: This assumes that all ports that the Device listens to will be matched by a SCHC rule. Is this the basic assumption of SCHC that all packets that do not match a rule are rejected? If yes, why do have fragmentation also for uncompressed packets?</t>
-
+<!--
+  <t>TODO: This assumes that all ports that the Device listens to will be matched by a SCHC rule. Is this the basic assumption of SCHC that all packets that do not match a rule are rejected? If yes, why do have fragmentation also for uncompressed packets?</t>
+-->
+<!--
 <t>TODO: discuss the various Type/Code that are expected to be generated in response to various errors.</t>
-
+-->
 </section>
 
 <section anchor="device-is-the-destination-of-an-icmpv6-error-message" title="Device is the destination of an ICMPv6 error message">
@@ -856,7 +861,7 @@ It also defines two new Most identities: </t>
       been included in the Data Model.</li>
 </ul>
 
-<t>TThe Field Value may be compressed by a rule. The result SHOULD be included in the 
+<t>The Field Value may be compressed by a rule. The result SHOULD be included in the 
 SCHC message as a variable length residue. It contains the Rule ID used by the compression,
 the residue, the payload and some padding bits since the variable length init is in bytes.</t>
 <ul>
