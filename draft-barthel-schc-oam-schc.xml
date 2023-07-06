@@ -39,13 +39,9 @@
   <!-- add 'role="editor"' below for the editors if appropriate -->
   <!--author fullname="Dominique Barthel" initials="D." role="editor" surname="Barthel"-->
   <author fullname="Dominique Barthel" initials="D." surname="Barthel">
-    <organization>Orange SA</organization>
+    <organization></organization>
     <address>
       <postal>
-        <street>28 chemin du Vieux Chene</street> <street>BP 98</street>
-        <!-- Reorder these if your country does things differently -->
-        <city>Meylan Cedex</city>
-        <code>38243</code>
         <country>France</country>
       </postal>
       <email>dominique.barthel@orange.com</email>
@@ -129,7 +125,8 @@
 
   <abstract>
 
-  <t>This document describes ICMPv6 compression with SCHC and how basic OAM is performed on Low Power Wide Area Networks (LPWANs)
+  <t>This document describes how ICMPv6 is compressed with SCHC and how basic Operation, Administration and Maintenance (OAM)
+    is performed on Low Power Wide Area Networks (LPWANs)
     by compressing ICMPv6/IPv6 headers
     and by protecting the LPWAN network and the Device from undesirable ICMPv6 traffic.</t>
 
@@ -149,16 +146,16 @@
     </ul>
 
     <t>OAM in LPWAN is a little bit trickier since the bandwidth is limited and
-    extra traffic added by OAM can introduce perturbation on regular transmission.</t>
+    the extra traffic added by OAM can introduce perturbation on regular transmission.</t>
 
     <t>Three main scenarios are investigated:</t>
 
     <ul>
-      <li>OAM reachability messages coming from internet. In that case, the SCHC core should act as a 
-          proxy and handle specifically the OAM traffic.</li>
+      <li>OAM reachability messages coming from the internet. In this case, the SCHC core should act as a 
+          proxy and handle the OAM traffic specifically.</li>
       <li>OAM messages initiated by LPWAN devices: They can be anticipated by the core SCHC.</li>
 
-      <li>OAM error messages coming from internet. In that case, the SCHC core may forward 
+      <li>OAM error messages coming from the internet. In this case, the SCHC core may forward 
           a compressed version to the device.</li>
     </ul>
 
@@ -166,9 +163,9 @@
 
     <t>ICMPv6 defines messages that inform the source of IPv6 packets of errors during packet delivery.
     It also defines the Echo Request/Reply messages that are used for basic network troubleshooting (ping command).
-    ICMPv6 messages are transported on IPv6.</t>
+    ICMPv6 messages are transported over IPv6.</t>
 
-    <t>This document also introduces the notion of actions in a SCHC rule, to perform locally some operations.</t>
+    <t>This document also introduces the notion of actions in a SCHC rule, which allow to perform some network operations locally at the SCHC core.</t>
 
   </abstract>
 </front>
