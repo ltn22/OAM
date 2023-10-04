@@ -34,7 +34,7 @@
         full title is longer than 39 characters -->
 
   <title abbrev="SCHC OAM for LPWAN">OAM for LPWAN using Static Context Header Compression (SCHC)</title>
-  <seriesInfo name="Internet-Draft" value="draft-barthel-lpwan-oam-schc-04"/>
+  <seriesInfo name="Internet-Draft" value="draft-barthel-schc-oam-schc-00"/>
 
   <!-- add 'role="editor"' below for the editors if appropriate -->
   <!--author fullname="Dominique Barthel" initials="D." role="editor" surname="Barthel"-->
@@ -128,6 +128,11 @@
         keywords will be used for the search engine. -->
 
   <abstract>
+
+  <t>This document describes ICMPv6 compression with SCHC and how basic OAM is performed on Low Power Wide Area Networks (LPWANs)
+    by compressing ICMPv6/IPv6 headers
+    and by protecting the LPWAN network and the Device from undesirable ICMPv6 traffic.</t>
+
     <t>With IP protocols now generalizing to constrained networks, users expect to be able to Operate, Administer and Maintain them 
     with the familiar tools and protocols they already use on less constrained networks.</t>
 
@@ -146,12 +151,15 @@
     <t>OAM in LPWAN is a little bit trickier since the bandwidth is limited and
     extra traffic added by OAM can introduce perturbation on regular transmission.</t>
 
-    <t>Three scenarios can be investigated:</t>
+    <t>Three main scenarios are investigated:</t>
 
     <ul>
-      <li>OAM reachability messages coming from internet. In that case, the SCHC core should act as a proxy and handle specifically the OAM traffic.</li>
-      <li>OAM error messages coming from internet. In that case, the SCHC core should may forward à compressed version to the device.</li>
-      <li>OAM messages coming from LPWAN devices: This can be included into regular devices but some specific devices may be installed in the LPWAN network to measure its quality.</li>
+      <li>OAM reachability messages coming from internet. In that case, the SCHC core should act as a 
+          proxy and handle specifically the OAM traffic.</li>
+      <li>OAM messages initiated by LPWAN devices: They can be anticipated by the core SCHC.</li>
+
+      <li>OAM error messages coming from internet. In that case, the SCHC core may forward 
+          a compressed version to the device.</li>
     </ul>
 
     <t>The primitive functionalities of OAM are achieved with the ICMPv6 protocol.</t>
@@ -159,11 +167,6 @@
     <t>ICMPv6 defines messages that inform the source of IPv6 packets of errors during packet delivery.
     It also defines the Echo Request/Reply messages that are used for basic network troubleshooting (ping command).
     ICMPv6 messages are transported on IPv6.</t>
-
-    <t>This document describes
-    how basic OAM is performed on Low Power Wide Area Networks (LPWANs)
-    by compressing ICMPv6/IPv6 headers
-    and by protecting the LPWAN network and the Device from undesirable ICMPv6 traffic.</t>
 
     <t>This document also introduces the notion of actions in a SCHC rule, to perform locally some operations.</t>
 
@@ -263,7 +266,7 @@ in the rule to be 128 and 0 and can therefore be elided with the not-sent CDA.</
 “aid in matching Echo Replies to this Echo Request” and that they “may be zero”.
 Data is “zero or more bytes of arbitrary data”.</t>
 
-<t>For contrained devices or networks, we recommend that Identifier be zero, Sequence Number 
+<t>For constrained devices or networks, we recommend that Identifier be zero, Sequence Number 
 be a counter on 3 bits, and Data be zero bytes (absent). Therefore, Identifier is elided with the 
 not-sent CDA, Sequence Number is transmitted on 3 bits with the LSB CDA and no Data is transmitted.</t>
 
@@ -278,7 +281,9 @@ This message bears the same format as the Echo Request message but with Type = 1
 message shall contain the same values as the invoking Echo Request message. Therefore, a rule shall be used 
 similar to that used for compressing the Echo Request message.</t>
 
-<t>TODO: how about a shared rule for Echo Request and Echo Reply with an LSB(1) CDA on the Type field? Or exploiting the Up/Down direction field in the rule?</t>
+<!--
+  <t>TODO: how about a shared rule for Echo Request and Echo Reply with an LSB(1) CDA on the Type field? Or exploiting the Up/Down direction field in the rule?</t>
+-->
 
 <section anchor="rule-example" title="Rule example">
 
@@ -383,7 +388,7 @@ allowing a serie of 255 consecutive pings.</t>
 <section anchor="device-is-pinged" title="Device is ping'ed">
 
 <t>If the Device is ping’ed (i.e., is the destination of an Echo Request message), the 
-device can receives the compress message and generate an Echo. In that case, the fields
+device receives the compress message and generate an Echo. In that case, the fields
 sequence number and identifier cannot be compressed if the source is not aware of 
 the compression scheme.</t>
 
@@ -396,7 +401,7 @@ propagating the Echo Request message over the LPWAN.</t>
 This requires to introduce a new processing when the rule is selected.
 The selection of a compression rule triggers the compression and sends the SCHC
 packet to the other end. Specifying an Action, change this behavior.
-In our case, instead of been processed by the compressor, the packet description is processed by a ping proxy.
+In our case, being processed by the compressor, the packet description is processed by a ping proxy.
 Since the rule is used for the selection, so CDAs are not necessary and set to "not-sent".</t>
 
 <t>The ping-proxy takes a parameter in second, gives the interval during which the device is considered active.  
@@ -564,15 +569,17 @@ an ICMPv6 error message “Destination Unreachable” (Type 1) with Code 1 (“P
 <t>In that case the SCHC C/D MAY act as a router (i.e. it MUST have a routable IPv6 address to generate
 an ICMPv6 message). When compressing a packet containing an IPv6 header, no compression rules are found and:
 * if a rule contains some extension headers, a parameter problem may be generated (type 4),
-* no rules contains the IPv6 device address found in the incoming packet, a no route to destination ICMPv6  message (type 0, code 3) may be generated,
+* no rule contains the IPv6 device address found in the incoming packet, a no route to destination ICMPv6  message (type 0, code 3) may be generated,
 <!--* a prefix is found, but no devIID matches, a address unreachable ICMPv6  message (type 0, code 3) may be generated,-->
 * a device IPv6 address is found, but no port matches,  a port unreachable ICMPv6  message (type 0, code 4) may be generated,</t>
 
 <!-- LT: I suppress type 0 code 0, if the packet arrives to the core SCHC, this means that there is a correct prefix. -->
-<t>TODO: This assumes that all ports that the Device listens to will be matched by a SCHC rule. Is this the basic assumption of SCHC that all packets that do not match a rule are rejected? If yes, why do have fragmentation also for uncompressed packets?</t>
-
+<!--
+  <t>TODO: This assumes that all ports that the Device listens to will be matched by a SCHC rule. Is this the basic assumption of SCHC that all packets that do not match a rule are rejected? If yes, why do have fragmentation also for uncompressed packets?</t>
+-->
+<!--
 <t>TODO: discuss the various Type/Code that are expected to be generated in response to various errors.</t>
-
+-->
 </section>
 
 <section anchor="device-is-the-destination-of-an-icmpv6-error-message" title="Device is the destination of an ICMPv6 error message">
@@ -827,9 +834,259 @@ TODO: the erroneous IPv6 packet header (not just the Rule Id) should be sent bac
 <t>LT: do we add packet too big, for instance if a fragmentation rule cannot handle a size larger than 1280?</t>
 </section>
 </section>
+
 </section>
 
+<section anchor="yang-tree" title="YANG identities and tree">
 
+<t> <xref target="Fig-yang-tree" /> shows the augmentation of the Data Model defined in 
+<xref target="RFC9363" /> </t>
+
+<t>This YANG module extends Field ID identities to includes fields contained in ICMPv6 header.
+Note that the ICMPv6 payload is parsed to the specific field "fid-icmpv6-payload"</t>
+
+<t>
+It also defines two new Most identities: </t>
+
+<ul>
+  <li>mo-rev-rule-match: The value contained in the Field Value matches a rule. 
+      The direction used for matching isthe opposite of the incoming message:
+      UP becomes DOWN and DOWN becomes UP.  This MO can be used to test if the Payload
+      contained in the ICMPv6 message matches a rule. This means that the 
+      original packet, at the origine of the ICMPv6 message, may have been generated
+      from the SCHC decompression.</li>
+  <li>mo-rule-match: The value contained in the Target Value matches a rule. 
+      The direction is the one of the incoming message. This MO is not used 
+      for ICMPv6 messages, but since it can be used in other situations, it has 
+      been included in the Data Model.</li>
+</ul>
+
+<t>The Field Value may be compressed by a rule. The result SHOULD be included in the 
+SCHC message as a variable length residue. It contains the Rule ID used by the compression,
+the residue, the payload and some padding bits since the variable length init is in bytes.</t>
+<ul>
+  <li>cda-rev-compress-sent:   The direction used for compression  is the opposite of the incoming message:
+      UP becomes DOWN and DOWN becomes UP.  </li>
+  <li>cda-compress-sent:   The direction used for compression  is the same as for the incoming message.  </li>
+
+</ul>
+
+<figure title="YANG tree" anchor="Fig-yang-tree"><artwork><![CDATA[
+module: ietf-schc-oam
+
+  augment /schc:schc/schc:rule/schc:nature/schc:compression:
+    +--rw proxy-behavior?         schc-oam:proxy-type
+    +--rw proxy-behavior-value* [index]
+       +--rw index    uint16
+       +--rw value?   binary
+
+]]></artwork></figure>
+
+
+</section>
+
+<section anchor="yang-module" title="YANG Module">
+
+<figure title="YANG module" anchor="Fig-yang-module"><artwork><![CDATA[
+module ietf-schc-oam {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-schc-oam";
+  prefix schc-oam;
+
+  import ietf-schc {
+      prefix schc;
+  }
+
+  organization
+    "IETF IPv6 over Low Power Wide-Area Networks (lpwan) working group";
+  contact
+    "WG Web:   <https://datatracker.ietf.org/wg/lpwan/about/>
+     WG List:  <mailto:p-wan@ietf.org>
+     Editor:   Laurent Toutain
+       <mailto:laurent.toutain@imt-atlantique.fr>
+     Editor:   Ana Minaburo
+       <mailto:ana@ackl.io>";
+  description
+     "
+     Copyright (c) 2021 IETF Trust and the persons identified as
+     authors of the code.  All rights reserved.
+
+     Redistribution and use in source and binary forms, with or
+     without modification, is permitted pursuant to, and subject to
+     the license terms contained in, the Simplified BSD License set
+     forth in Section 4.c of the IETF Trust's Legal Provisions
+     Relating to IETF Documents
+     (https://trustee.ietf.org/license-info).
+
+     This version of this YANG module is part of RFC XXXX
+     (https://www.rfc-editor.org/info/rfcXXXX); see the RFC itself
+     for full legal notices.
+
+     The key words 'MUST', 'MUST NOT', 'REQUIRED', 'SHALL', 'SHALL
+     NOT', 'SHOULD', 'SHOULD NOT', 'RECOMMENDED', 'NOT RECOMMENDED',
+     'MAY', and 'OPTIONAL' in this document are to be interpreted as
+     described in BCP 14 (RFC 2119) (RFC 8174) when, and only when,
+     they appear in all capitals, as shown here.
+
+     *************************************************************************
+
+     This module extends the ietf-schc module to include the compound-ack 
+     behavior for Ack On Error as defined in RFC YYYY. 
+     It introduces a new leaf for Ack on Error defining the format of the
+     SCHC Ack and add the possibility to send several bitmaps in a single 
+     answer.";
+
+  revision 2023-06-26 {
+    description
+      "Initial version for RFC YYYY ";
+    reference
+      "RFC YYYY: OAM";
+  }
+
+  identity fid-icmpv6-base-type {
+    base schc:fid-base-type;
+    description
+      "Field IP base type for ICMPv6 headers described in RFC 4443";
+    reference 
+      "RFC 4443   Internet Control Message Protocol (ICMPv6)
+                  for the Internet Protocol Version 6 (IPv6) Specification";
+  }
+
+// ICMPv6 Fields
+
+  identity fid-icmpv6-type {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 type field";
+  }
+
+  identity fid-icmpv6-code {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 code field";
+  }
+
+  identity fid-icmpv6-checksum {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 checksum field";
+  }
+
+    identity fid-icmpv6-mtu {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 MTU (see draft OAM)";
+  }
+
+  identity fid-icmpv6-pointer {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 field (see draft OAM)";
+  }
+
+  identity fid-icmpv6-identifier {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 identifier field";
+  }
+
+  identity fid-icmpv6-sequence {
+    base schc:fid-icmpv6-base-type;
+    description
+      "ICMPv6 sequence number field";
+  }
+
+
+  identity fid-icmpv6-payload {
+    base schc:fid-icmpv6-base-type;
+    description
+      "payload in the ICMPv6 message";
+  }
+
+// MO and CDA
+
+  identity mo-rule-match {
+    base schc:mo-base-type;
+    description 
+        "Macthing operator return true, if the TV matches a rule
+        keeping UP and DOWN direction." ;
+  }
+
+  identity mo-rev-rule-match {
+    base schc:mo-base-type;
+    description 
+        "Macthing operator return true, if the TV matches a rule
+        reversing UP and DOWN direction." ;
+  }
+
+
+  identity cda-compress-sent {
+    base schc:mo-base-type;
+    description 
+        "Send a compressed version of TV keeping UP and 
+        DOWN direction." ;
+  }
+
+  identity  cda-rev-compress-sent {
+    base schc:mo-base-type;
+    description 
+        "Send a compressed version of TV reversing UP and 
+        DOWN direction." ;
+  }
+
+// Proxy actions
+
+  identity  proxy-schc-message{
+    description
+      "Define how the message is proxied after compression";
+  }
+
+  identity proxy-none {
+    base proxy-schc-message;
+    description
+      "The message is not proxied and sent to L2, 
+      default behavior of RFC 8724";
+  }
+
+  identity proxy-pingv6 {
+    base proxy-schc-message;
+    description
+      "The message is processed by an ping6 proxy";
+  }
+
+  typedef proxy-type {
+    type identityref {
+      base proxy-schc-message;
+    }
+    description
+      "type used in rules";
+  }
+
+// SCHC rule 
+
+  augment "/schc:schc/schc:rule/schc:nature/schc:compression" {
+    leaf proxy-behavior {
+        type schc-oam:proxy-type;
+        default "schc-oam:proxy-none";
+        description
+              "Entity proxying the SCHC message.";
+    }
+    list proxy-behavior-value {
+        key "index";
+        uses schc:tv-struct;
+        description
+              "Parameters associated to the proxy action.";
+    }
+    description
+      "added to SCHC rules";
+  }
+
+
+}
+]]></artwork></figure>
+
+
+</section>
 
 <section anchor="security-considerations" title="Security considerations">
 
@@ -871,6 +1128,7 @@ TODO: the erroneous IPv6 packet header (not just the Rule Id) should be sent bac
       <?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.8174.xml"?>
       <?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.8200.xml"?>
       <?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.8724.xml"?>
+      <?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.9363.xml"?>
     </references>
 
     <references>
