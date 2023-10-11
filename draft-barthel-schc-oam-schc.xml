@@ -130,7 +130,7 @@
     by compressing ICMPv6/IPv6 headers
     and by protecting the LPWAN network and the Device from undesirable ICMPv6 traffic.</t>
 
-<t>This document proposes extention to the YANG Data Model defined in {{RFC9363}} </t>
+<t>This document proposes extention to the YANG Data Model defined in <xref target="RFC9363"/> </t>
  
   </abstract>
 </front>
