@@ -130,7 +130,17 @@
     by compressing ICMPv6/IPv6 headers
     and by protecting the LPWAN network and the Device from undesirable ICMPv6 traffic.</t>
 
-    <t>With IP protocols now generalizing to constrained networks, users expect to be able to Operate, Administer and Maintain them 
+<t>This document proposes extention to the YANG Data Model defined in {{RFC9363}} </t>
+ 
+  </abstract>
+</front>
+
+<middle>
+<section anchor="introduction" numbered="true" toc="default">
+<name>Introduction</name>
+
+
+   <t>With IP protocols now generalizing to constrained networks, users expect to be able to Operate, Administer and Maintain them 
     with the familiar tools and protocols they already use on less constrained networks.</t>
 
     <t>OAM uses specific messages sent into the data plane to measure some parameters of a network.
@@ -166,13 +176,6 @@
     ICMPv6 messages are transported over IPv6.</t>
 
     <t>This document also introduces the notion of actions in a SCHC rule, which allow to perform some network operations locally at the SCHC core.</t>
-
-  </abstract>
-</front>
-
-<middle>
-<section anchor="introduction" numbered="true" toc="default">
-<name>Introduction</name>
 
 <t>The primitive functionalities of OAM <xref target="RFC6291"/> are achieved with the ICMPv6 protocol.</t>
 
