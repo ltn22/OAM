@@ -858,6 +858,11 @@ TODO: the erroneous IPv6 packet header (not just the Rule Id) should be sent bac
 
 </section>
 
+<section title="Rule Action">
+<t>The Action is a new attribute in the rule. When a rule matching the packet is selected, the action 
+is applied first and indicates if the regular compression based on CDA should be applied.  </t>
+</section>
+
 <section anchor="yang-tree" title="YANG identities and tree">
 
 <t> <xref target="Fig-yang-tree" /> shows the augmentation of the Data Model defined in 
