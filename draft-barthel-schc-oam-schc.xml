@@ -247,7 +247,28 @@ appear in all capitals, as shown here.</t>
 <section anchor="DetailedBehavior" title="Detailed behavior">
 
 <section title="ICMPv6 compression">
-<t>TBD: list of the fields that can be found in an ICMPv6 message.</t>
+<t>This section defines ICMPv6 fields that can be compressed by SCHC. {{RFC4443}} defines several 
+formats regarding the type of the ICMPv6 message.</t>
+<t>Several fields can be extracted. Note that names listed here are just informative and lisibility, the 
+Field ID identifiers are specified int augmentation of the YANG Data Model (cf.  <xref target="yang-module"/>):</t>
+
+<t>These fields are present in all the messages: </t>
+<ul>
+  <li>ICMPv6 Type indicates the fields present in the message.</li>
+  <li>ICMPv6 Code is related to the ICMPv6 type and has not impact on the message format.</li>
+  <li>ICMPv6 Checksum covers the ICMPv6 message and part of the IPv6 header to protect against errors.</li>
+  <li>ICMPv6 Payload contains either part of the message at the orgine of the error or some data in the case of ping.</li>
+</ul>
+
+<t>The other fields depends of the message type:</t>
+<ul>
+  <li>ICMPv6 MTU is used by Packet Too Big message (type = 2) to 
+      carry the MTU expected by a node rejecting the packet forwarding </li>
+  <li>ICMPv6 Pointer is used by Parameter Problem message to indicate the position 
+      of a detected error in the original message </li>
+  <li>ICMPv6 Identifier and ICMPv6 Sequence Number are used by ping echo (type 128) and reply (type 129) messages.</li>
+</ul>
+
 </section>
 
 <section anchor="DevicePings" title="Device does a ping">
