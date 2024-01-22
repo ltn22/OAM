@@ -4,7 +4,7 @@ module ietf-schc-oam {
   prefix schc-oam;
 
   import ietf-schc {
-      prefix schc;
+    prefix schc;
   }
 
   organization
@@ -17,7 +17,7 @@ module ietf-schc-oam {
      Editor:   Ana Minaburo
        <mailto:ana@ackl.io>";
   description
-     "
+    "
      Copyright (c) 2021 IETF Trust and the persons identified as
      authors of the code.  All rights reserved.
 
@@ -40,10 +40,10 @@ module ietf-schc-oam {
 
      *************************************************************************
 
-     This module extends the ietf-schc module to include the compound-ack 
-     behavior for Ack On Error as defined in RFC YYYY. 
+     This module extends the ietf-schc module to include the compound-ack
+     behavior for Ack On Error as defined in RFC YYYY.
      It introduces a new leaf for Ack on Error defining the format of the
-     SCHC Ack and add the possibility to send several bitmaps in a single 
+     SCHC Ack and add the possibility to send several bitmaps in a single
      answer.";
 
   revision 2024-01-19 {
@@ -57,96 +57,95 @@ module ietf-schc-oam {
     base schc:fid-base-type;
     description
       "Field IP base type for ICMPv6 headers described in RFC 4443";
-    reference 
+    reference
       "RFC 4443   Internet Control Message Protocol (ICMPv6)
                   for the Internet Protocol Version 6 (IPv6) Specification";
   }
 
-// ICMPv6 Fields
+  // ICMPv6 Fields
 
   identity fid-icmpv6-type {
-    base schc:fid-icmpv6-base-type;
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 code field present in all ICMPv6 messages.";
   }
 
   identity fid-icmpv6-code {
-    base schc:fid-icmpv6-base-type;
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 code field present in all ICMPv6 messages.";
   }
 
   identity fid-icmpv6-checksum {
-    base schc:fid-icmpv6-base-type;
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 checksum field present in all ICMPv6 messages.";
   }
 
-    identity fid-icmpv6-mtu {
-    base schc:fid-icmpv6-base-type;
+  identity fid-icmpv6-mtu {
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 MTU, present in Packet Too Big message.";
   }
 
   identity fid-icmpv6-pointer {
-    base schc:fid-icmpv6-base-type;
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 Pointer, present in Parameter Problem message.";
   }
 
   identity fid-icmpv6-identifier {
-    base schc:fid-icmpv6-base-type;
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 identifier field, present in Echo Request/Reply message.";
   }
 
   identity fid-icmpv6-sequence {
-    base schc:fid-icmpv6-base-type;
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 sequence number field, present in Echo Request/Reply message.";
   }
 
   identity fid-icmpv6-payload {
-    base schc:fid-icmpv6-base-type;
+    base fid-icmpv6-base-type;
     description
       "ICMPv6 payload following ICMPv6 header.
-      If payload is empty, this field exists with a length of 0.";
+       If payload is empty, this field exists with a length of 0.";
   }
 
-// MO and CDA
+  // MO and CDA
 
   identity mo-rule-match {
     base schc:mo-base-type;
-    description 
-        "Macthing operator return true, if the TV matches a rule
-        keeping UP and DOWN direction." ;
+    description
+      "Macthing operator return true, if the TV matches a rule
+       keeping UP and DOWN direction.";
   }
 
   identity mo-rev-rule-match {
     base schc:mo-base-type;
-    description 
-        "Macthing operator return true, if the TV matches a rule
-        reversing UP and DOWN direction." ;
+    description
+      "Macthing operator return true, if the TV matches a rule
+       reversing UP and DOWN direction.";
   }
-
 
   identity cda-compress-sent {
     base schc:mo-base-type;
-    description 
-        "Send a compressed version of TV keeping UP and 
-        DOWN direction." ;
+    description
+      "Send a compressed version of TV keeping UP and
+       DOWN direction.";
   }
 
-  identity  cda-rev-compress-sent {
+  identity cda-rev-compress-sent {
     base schc:mo-base-type;
-    description 
-        "Send a compressed version of TV reversing UP and 
-        DOWN direction." ;
+    description
+      "Send a compressed version of TV reversing UP and
+       DOWN direction.";
   }
 
-// Proxy actions
+  // Proxy actions
 
-  identity  proxy-schc-message{
+  identity proxy-schc-message {
     description
       "Define how the message is proxied after compression.";
   }
@@ -154,8 +153,8 @@ module ietf-schc-oam {
   identity proxy-none {
     base proxy-schc-message;
     description
-      "The message is not proxied and sent to L2, 
-      default behavior of RFC 8724.";
+      "The message is not proxied and sent to L2,
+       default behavior of RFC 8724.";
   }
 
   identity proxy-pingv6 {
@@ -172,24 +171,22 @@ module ietf-schc-oam {
       "The type used in rules to define an action.";
   }
 
-// SCHC rule 
+  // SCHC rule 
 
   augment "/schc:schc/schc:rule/schc:nature/schc:compression" {
     leaf proxy-behavior {
-        type schc-oam:proxy-type;
-        default "schc-oam:proxy-none";
-        description
-              "Entity proxying the SCHC message.";
+      type schc-oam:proxy-type;
+      default "schc-oam:proxy-none";
+      description
+        "Entity proxying the SCHC message.";
     }
     list proxy-behavior-value {
-        key "index";
-        uses schc:tv-struct;
-        description
-              "Parameters associated to the proxy action.";
+      key "index";
+      uses schc:tv-struct;
+      description
+        "Parameters associated to the proxy action.";
     }
     description
       "Leaves added to SCHC rules for proxy.";
   }
-
-
 }
