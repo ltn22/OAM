@@ -9,7 +9,7 @@
 <rfc
       xmlns:xi="http://www.w3.org/2001/XInclude"
       category="info"
-      docName="draft-barthel-schc-oam-schc-02"
+      docName="draft-barthel-schc-oam-schc-03"
       ipr="trust200902"
       obsoletes=""
       updates=""
@@ -102,7 +102,7 @@
   </author>
  ***** -->
  
-  <date year="2023"/>
+  <date year="2024"/>
   <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
         in the current day for you. If only the current year is specified, xml2rfc will fill 
 	in the current day and month for you. If the year is not the current one, it is 
@@ -614,7 +614,7 @@ an ICMPv6 message). When compressing a packet containing an IPv6 header, no comp
   <li> no rule contains the IPv6 device address found in the incoming packet, a no route to destination ICMPv6  message (type 0, code 3) may be generated,</li>
   <!--* a prefix is found, but no devIID matches, a address unreachable ICMPv6  message (type 0, code 3) may be generated,-->
   <li> a device IPv6 address is found, but no port matches,  a port unreachable ICMPv6  message (type 0, code 4) may be generated,</li>
-  <li> if the incoming packet is too large for any of the fragmentation rules, an ICMPv6 Message 
+  <li> if the incoming packet is too large for any of the fragmentation rules, an ICMPv6 Message Too big MAY be generated with the largest size allowaed by the fragmentation rules.</li>
 </ul>
 <!-- LT: I suppress type 0 code 0, if the packet arrives to the core SCHC, this means that there is a correct prefix. -->
 <!--
@@ -984,7 +984,7 @@ module ietf-schc-oam {
      SCHC Ack and add the possibility to send several bitmaps in a single 
      answer.";
 
-  revision 2023-06-26 {
+  revision 2024-01-19 {
     description
       "Initial version for RFC YYYY ";
     reference
@@ -1005,50 +1005,50 @@ module ietf-schc-oam {
   identity fid-icmpv6-type {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 type field";
+      "ICMPv6 code field present in all ICMPv6 messages.";
   }
 
   identity fid-icmpv6-code {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 code field";
+      "ICMPv6 code field present in all ICMPv6 messages.";
   }
 
   identity fid-icmpv6-checksum {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 checksum field";
+      "ICMPv6 checksum field present in all ICMPv6 messages.";
   }
 
     identity fid-icmpv6-mtu {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 MTU (see draft OAM)";
+      "ICMPv6 MTU, present in Packet Too Big message.";
   }
 
   identity fid-icmpv6-pointer {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 field (see draft OAM)";
+      "ICMPv6 Pointer, present in Parameter Problem message.";
   }
 
   identity fid-icmpv6-identifier {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 identifier field";
+      "ICMPv6 identifier field, present in Echo Request/Reply message.";
   }
 
   identity fid-icmpv6-sequence {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 sequence number field";
+      "ICMPv6 sequence number field, present in Echo Request/Reply message.";
   }
-
 
   identity fid-icmpv6-payload {
     base schc:fid-icmpv6-base-type;
     description
-      "payload in the ICMPv6 message";
+      "ICMPv6 payload following ICMPv6 header.
+      If payload is empty, this field exists with a length of 0.";
   }
 
 // MO and CDA
@@ -1086,20 +1086,20 @@ module ietf-schc-oam {
 
   identity  proxy-schc-message{
     description
-      "Define how the message is proxied after compression";
+      "Define how the message is proxied after compression.";
   }
 
   identity proxy-none {
     base proxy-schc-message;
     description
       "The message is not proxied and sent to L2, 
-      default behavior of RFC 8724";
+      default behavior of RFC 8724.";
   }
 
   identity proxy-pingv6 {
     base proxy-schc-message;
     description
-      "The message is processed by an ping6 proxy";
+      "The message is processed by an ping6 proxy.";
   }
 
   typedef proxy-type {
@@ -1107,7 +1107,7 @@ module ietf-schc-oam {
       base proxy-schc-message;
     }
     description
-      "type used in rules";
+      "The type used in rules to define an action.";
   }
 
 // SCHC rule 
@@ -1126,7 +1126,7 @@ module ietf-schc-oam {
               "Parameters associated to the proxy action.";
     }
     description
-      "added to SCHC rules";
+      "Leaves added to SCHC rules for proxy.";
   }
 
 
