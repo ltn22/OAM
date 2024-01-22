@@ -85,32 +85,33 @@ module ietf-schc-oam {
     identity fid-icmpv6-mtu {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 MTU (see draft OAM)";
+      "ICMPv6 MTU, present in Packet Too Big message.";
   }
 
   identity fid-icmpv6-pointer {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 field (see draft OAM)";
+      "ICMPv6 Pointer, present in Parameter Problem message.";
   }
 
   identity fid-icmpv6-identifier {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 identifier field";
+      "ICMPv6 identifier field, present in Echo Request/Reply message.";
   }
 
   identity fid-icmpv6-sequence {
     base schc:fid-icmpv6-base-type;
     description
-      "ICMPv6 sequence number field";
+      "ICMPv6 sequence number field, present in Echo Request/Reply message.";
   }
 
 
   identity fid-icmpv6-payload {
     base schc:fid-icmpv6-base-type;
     description
-      "payload in the ICMPv6 message";
+      "ICMPv6 payload following ICMPv6 header.
+      If payload is empty, this field exists with a length of 0.";
   }
 
 // MO and CDA
