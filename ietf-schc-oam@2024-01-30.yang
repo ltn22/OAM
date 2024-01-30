@@ -46,7 +46,7 @@ module ietf-schc-oam {
      SCHC Ack and add the possibility to send several bitmaps in a single 
      answer.";
 
-  revision 2023-06-26 {
+  revision 2024-01-30 {
     description
       "Initial version for RFC YYYY ";
     reference
@@ -106,7 +106,6 @@ module ietf-schc-oam {
       "ICMPv6 sequence number field, present in Echo Request/Reply message.";
   }
 
-
   identity fid-icmpv6-payload {
     base schc:fid-icmpv6-base-type;
     description
@@ -145,29 +144,30 @@ module ietf-schc-oam {
         DOWN direction." ;
   }
 
-// Proxy actions
+// Actions
 
-  identity  proxy-schc-message{
+  identity action-base-type{
     description
-      "Define how the message is proxied after compression.";
+      "Action is an optional feature, that may be applied 
+      globaly to a rule, when selected.";
   }
 
-  identity proxy-none {
-    base proxy-schc-message;
+  identity action-none {
+    base action-base-type;
     description
       "The message is not proxied and sent to L2, 
       default behavior of RFC 8724.";
   }
 
-  identity proxy-pingv6 {
-    base proxy-schc-message;
+  identity action-proxy-pingv6 {
+    base action-base-type;
     description
       "The message is processed by an ping6 proxy.";
   }
 
-  typedef proxy-type {
+  typedef action-type {
     type identityref {
-      base proxy-schc-message;
+      base action-base-type;
     }
     description
       "The type used in rules to define an action.";
@@ -176,17 +176,17 @@ module ietf-schc-oam {
 // SCHC rule 
 
   augment "/schc:schc/schc:rule/schc:nature/schc:compression" {
-    leaf proxy-behavior {
-        type schc-oam:proxy-type;
-        default "schc-oam:proxy-none";
+    leaf action {
+        type schc-oam:action-type;
+        default "schc-oam:action-none";
         description
               "Entity proxying the SCHC message.";
     }
-    list proxy-behavior-value {
+    list action-value {
         key "index";
         uses schc:tv-struct;
         description
-              "Parameters associated to the proxy action.";
+              "Parameters associated to the action.";
     }
     description
       "Leaves added to SCHC rules for proxy.";
