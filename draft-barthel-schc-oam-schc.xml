@@ -431,7 +431,7 @@ allowing a serie of 255 consecutive pings.</t>
       <td align="left">ignore</td>
       <td align="left">value-sent</td>
       <td align="left"></td>
-      <td align="left">X</td>
+      <td align="left">(data*8) + 4 or +12</td>
     </tr>
   </tbody>
 </table>
@@ -783,7 +783,7 @@ compressed header. </t>
       <td align="left">rev-rule-match</td>
       <td align="left">rev-compress-sent</td>
       <td align="left"></td>
-      <td align="left">(compressed IPv6 header*9) + 4 or +12</td>
+      <td align="left">(compressed IPv6 header*8) + 4 or +12</td>
     </tr>
   </tbody>
 </table>
