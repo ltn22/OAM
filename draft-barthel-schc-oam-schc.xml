@@ -127,11 +127,15 @@
 
   <abstract>
 
-  <t>This document describes how SCHC can be used to compress and decompress ICMPv6 headers.</t>
+    <t>This document describes how the ICMPv6 protocol can be integrated into the SCHC architecture.  
+    It extends the YANG Data Model decribed in  <xref target="RFC9363"/> with new field IDs specific 
+    to ICMPv6 headers as defined in <xref target="RFC4443"/>. </t>
+  
+  <t>To enhance the compression of ICMPv6 error messages, the document also introduces 
+  two new Matching Operators and two Compression Decompression Actions to manipulate the ICMPv6 payload.   </t>
 
-<t>This document specifies additional behavior for SCHC <xref target="RFC8724"/> and
-extends the YANG Data Model defined in <xref target="RFC9363"/>. It introduces new Field IDs and 
-2 MO and 2 CDA to manipulate ICMPv6 payload.</t>
+  <t>Finally, for constrained networks such as LPWAN, it introduces a proxy behavior, where 
+  a SCHC Core end-point may anticipate the device reaction to incorrect messages.</t>
  
   </abstract>
 </front>
@@ -141,46 +145,58 @@ extends the YANG Data Model defined in <xref target="RFC9363"/>. It introduces n
 <name>Introduction</name>
 
 
-    <t>With IP protocols now generalizing to constrained networks, users expect to perform 
-    operation such as ping to ensure device are still active. In the same way, ICMPv6 Error
-    Message can be helpful for the Device with may adapt its behavior when the Application
-    becomes unreachable. The Application may also benefit of ICMPv6 Error Message produced
-    by the SCHC Entity when the compression is not possible.</t>
+     <t>
+    Applying SCHC compression to IPv6 networks, users expect to perform control operations 
+    such as ping to ensure that devices are still active. In the same way, ICMPv6 error 
+    message can be helpful for the Device with may adapt its behavior when the Application 
+    becomes unreachable. The Application may also benefit from the ICMPv6 error message 
+    produced by the SCHC entity when compression is not possible.</t>
 
-    <t>However, this requires a little care, because ICMPv6 traffic adds load to the network,
+<!--    <t>However, this requires a little care, because ICMPv6 traffic adds load to the network,
 	  and LPWANs could easily be overwhelmed by it.
 	  LPWANs’ salient characteristics are described in <xref target="RFC8376"/>.</t>
+-->
 
-	<t>The compression described in this document is not limited to traffic over LPWANs but
-  can be applied to any kind of networks. The ICMPv6 messages cover by this document are those
-  defined in ICMPv6 protocol <xref target="RFC4443"/>. The compression described in this document 
-  do not cover other ICMPv6 messages, such as an extended format of the same messages <xref target="RFC4884"/>
-  and other messages used by the Neighbor Discovery Protocol <xref target="RFC4861"/>.</t>
-
-<t>ICMPv6 defines a generic message format, used to inform the source of IPv6 packets of errors during packet delivery..</t>
-<t><xref target="RFC4443"/> instantiates 4 such error messages:
-Destination Unreachable, Packet Too Big, Time Exceeded and Parameter Problem.<xref target="RFC4443"/> also defines 
-the Echo Request and Echo Reply messages, which provide support for the ping application.</t>
+	<t>
+ The compression described in this document is not limited to traffic over LPWANs, but can
+ be applied to any kind of network. The ICMPv6 messages covered by this document are those
+  defined in ICMPv6 protocol <xref target="RFC4443"/>. The compression described in this 
+  document does not cover other ICMPv6 messages, such as an extended format of the same messages
+   <xref target="RFC4884"/> and other messages used by the Neighbor Discovery Protocol <xref target="RFC4861"/>.</t>
 
 
-<t>This document focuses on using Static Context Header Compression (SCHC) to compress <xref target="RFC4443"/> messages.
-More specifically, this document describes recommended compression of ICMPv6/IPv6 messages (including header fields and
-structured payload) and extends SCHC by specifying new Field Identifiers for ICMPv6 and 2 MO and 2 CDA to compress ICMPv6
-payload. This covers different scenarios. Since ICMPv6 is strongly related to IPv6, these scenarios imply 
-SCHC entities in charge of compressing/decompression IPv6 called the Device and named after the core SCHC.:</t>
+<t>ICMPv6 defines a generic message format, which is used to inform the source of IPv6 packets 
+of errors during packet delivery. It also specifies messages used by the ping command to test 
+connectivity with a  remote node.</t>
+
+<t><xref target="RFC4443"/> instantiates four such error messages:</t>
+<ul>
+  <li>Destination Unreachable (type = 1),</li>
+  <li>Packet Too Big (type = 2), </li> 
+  <li> Time Exceeded and </li>
+  <li>Parameter Problem.</li>
+</ul>
+<t><xref target="RFC4443"/> also defines two informational messages,  
+the Echo Request (type=128) and Echo Reply messages (type = 129), which provide support for the ping application.</t>
+
+
+<t>This document describes recommended compression of ICMPv6/IPv6 messages (including header fields and 
+structured payload) and extends SCHC by specifying new Field Identifiers for ICMPv6 and two MO and 
+two CDA to compress the ICMPv6 payload. This covers different scenarios:</t>
 
     <ul>
-      <li>ICMPv6 messages initiated by the Devices. They can be sent in their SCHC-compressed 
-      form like regular Device traffic.</li>
+      <li>ICMPv6 messages initiated by SCHC End-Points. They can be sent in their SCHC-compressed 
+      form, in ICMPv6 messages traffic. This includes error messages, as well as informational echo 
+      request/reply traffic</li>
 
-      <li>ICMPv6 error messages returned from the internet after an  Device transmission. The core SCHC forwards
-          a compressed version of the error message to the Device.</li>
+      <li>ICMPv6 error messages returned from the Internet after End-Point transmission. The core 
+      SCHC forwards a compressed version of the error message to the End-Point, including if necessary 
+      a compressed payload.</li>
 
-      <li>traffic coming from the internet that would generate an error at the Device: if it can detect the situation,
-	      the core SCHC responds with an ICMPv6 error message, acting as a surrogate to the Device.</li>
+      <li>Traffic coming from the Internet that would generate an error on the End-Point: if it can 
+      detect the situation, the SCHC Core directly responds with an ICMPv6 error message, acting as a 
+      surrogate to the End-Point.</li>
     </ul>
-
-
 
 </section>
 
@@ -195,51 +211,74 @@ and “OPTIONAL” in this document are to be interpreted as
 described in BCP 14 <xref target="RFC2119"/> <xref target="RFC8174"/> when, and only when, they 
 appear in all capitals, as shown here.</t>
 
+<ul>
+  <li>  SCHC Core: SCHC End-Point located at the boundary of a regular IP network 
+  and a network that applies SCHC compression and fragmentation</li>
+
+  <li>  SCHC Device: The other end of the SCHC instance formed with the SCHC core.</li>
+
+  <li> Application: entiity sending packets to the SCHC Device or receiving packets from 
+  the SCHC Device. The Application may be co-located with the SCHC Core, but is usually 
+  located on the regular Internet.</li>
+
+  <li> Regular Internet: Network location carrying uncompressed IPv6 packets. </li>
+</ul>
+
 </section>
 
 <section anchor="use-cases">
 <name>Use cases</name>
 
-<t>In the LPWAN architecture, we can distinguish the following cases:</t>
+<t>In the following sections, we will describe at <xref target="basicICMPv6"/> ICMPv6 message 
+compression for all ICMPv6 messages 
+specified in <xref target="RFC4443"/>. We will then extend this basic compression  with a specific 
+focus on the following cases:</t>
 
 <ul spacing="normal">
-  <li>The Device is the originator of an Echo Request message, and therefore the destination of the Echo 
-  Reply message. 
-      These messages are compressed/decompressed by the device and by the core SCHC using SCHC rules that match the ICMPv6 fields.</li>
-  <li>The Device is the destination of an Echo Request message, and therefore the purported source 
-  of an Echo Reply message. 
-      The core SCHC can either forward the SCHC-compressed Echo Request message to the Device.
+  <li>The Device is the originator of an Echo Request message, and therefore the destination 
+  of the Echo  Reply message. 
+  These messages are compressed/decompressed by the device and the SCHC 
+  Core using SCHC rules that match the ICMPv6 fields (see <xref target="DevicePings"/>).</li>
+<!--      
+  <li>The Device is the destination of an Echo Request message and therefore the purported source of an Echo Reply message. 
+      The SCHC Core can either forward the SCHC-compressed Echo Request message to the Device.
       The proxy answer can be related to the Device observed activity.</li>
-  <li>The Device should have send an ICMP error message, mainly in response to an incorrect
-      incoming IPv6 message. In this case, as much as possible, the core SCHC should act as
-      a proxy and originate the ICMP Destination Unreachable message, so that the Device and the 
-      network are protected from this unwanted traffic.</li>
-  <li>the Device is the destination of the ICMPv6 message, mainly in response to a
-      packet sent by the Device to the network that generates an error. In this case, we want the ICMPv6 message
-      to reach the Device,
-      and this document describes in <xref target="ErrMsgCompr"/> what SCHC compression should be applied.
-      Since ICMPv6 Error Messages contains in the payload the orginal message which has triggered the error, SCHC
-      can compress it using the rules in the reverse direction. </li>
+ -->     
+  <li>The Device should have send an ICMP error message, mainly in response to an incorrect 
+  incoming IPv6 message. In this case, as much as possible, the SCHC Core should act on behalf 
+  of the Device and originate the Unreachable ICMP Destination message, so that the Device and 
+  the network are protected from this unwanted traffic (see <xref target="ProxyErrMsg"/>).</li>
+  
+  <li>the Device is the destination of the ICMPv6 message, mainly in response to a packet sent 
+  by the device to the network that generates an error. In this case, we want the ICMPv6 message 
+  to reach the Device, and this document describes in <xref target="ErrMsgCompr"/> what SCHC 
+  compression should be applied.
+      Since ICMPv6 error messages contain in the payload the original message which has 
+      triggered the error, SCHC can compress it using the rules in the reverse direction 
+      (see <xref target="device-is-the-destination"/>). </li>
 </ul>
-
-<t>These cases are further described in <xref target="DetailedBehavior"/>.</t>
 
 </section>
 
-<section anchor="DetailedBehavior" title="Detailed behavior">
+<!--<section anchor="DetailedBehavior" title="Detailed behavior">-->
 
-<section title="ICMPv6 compression">
-<t>This section defines ICMPv6 fields that can be compressed by SCHC. {{RFC4443}} defines several 
-formats regarding the type of the ICMPv6 message.</t>
-<t>From them, several fields can be extracted. Note that names listed here are just informative and lisibility, the 
-Field ID identifiers are specified int augmentation of the YANG Data Model (cf.  <xref target="yang-module"/>):</t>
+<section title="ICMPv6 compression" anchor="basicICMPv6">
+
+<t>This section defines ICMPv6 fields that can be compressed by SCHC. <xref target="RFC4443"/> 
+defines several formats with respect to the type of the ICMPv6 message.</t>
+<t>From them, several fields can be extracted. Note that the names listed here are just informative 
+and readability, and the field ID identifiers are specified in the augmentation of the YANG Data Model 
+(cf.  <xref target="yang-module"/>):</t>
 
 <t>These fields are present in all the messages: </t>
 <ul>
   <li>ICMPv6 Type indicates the fields present in the message.</li>
-  <li>ICMPv6 Code is related to the ICMPv6 type and has not impact on the message format.</li>
+  <li>ICMPv6 Code is related to the ICMPv6 type and does not have an impact on the message format.</li>
   <li>ICMPv6 Checksum covers the ICMPv6 message and part of the IPv6 header to protect against errors.</li>
-  <li>ICMPv6 Payload contains either part of the message at the orgine of the error or some data in the case of ping.</li>
+  <li>ICMPv6 Payload is part of the ICMPv6 protocol and is not directly originated from upper layers protocols, 
+      so this field may be compressed by SCHC at the ICMPv6 level. In the ICMPv6 error message, the payload can 
+      be compressed by SCHC compression rules, as it contains the IPv6 message header responsible for the error. 
+      For Echo Request and Echo Reply it contains a specific pattern to set the message length. </li>
 </ul>
 
 <t>The other fields depends of the message type:</t>
@@ -251,15 +290,15 @@ Field ID identifiers are specified int augmentation of the YANG Data Model (cf. 
   <li>ICMPv6 Identifier and ICMPv6 Sequence Number are used by ping echo (type 128) and reply (type 129) messages.</li>
 </ul>
 
-<t>ICMPv6 is the support for several protocols to configure nodes. These protocols defines new types and 
-may add optionnal information after the ICMPv6 header</t>
+<!--<t>ICMPv6 is the support for several protocols to configure nodes. These protocols defines new types and 
+may add optionnal information after the ICMPv6 header</t>-->
 
 </section>
 
 <section anchor="DevicePings" title="Device does a ping">
 
-<t>A Device may send an Echo Request message to check the availability of the network and of the host running the Application. </t>
-<t>If a ping request is generated by a Device, then SCHC compression applies.</t>
+<t>A Device may send an Echo Request message to check the availability of the network and the host running the Application. </t>
+<t>If a ping Echo Request is generated by a Device, then SCHC compression applies.</t>
 
 <t>The format of an ICMPv6 Echo Request message is described in <xref target="Fig-ICMPv6-Echo-Request"/>, with Type=128 and Code=0.</t>
 
@@ -276,33 +315,31 @@ may add optionnal information after the ICMPv6 header</t>
 
 ]]></artwork></figure>
 
-<t>If we assume that one rule will be devoted to compressing Echo Request messages, then Type and Code are known 
+<t>If we assume that one rule will be devoted to compressing Echo Request messages, then the Type and Code are known
 in the rule to be 128 and 0 and can therefore be elided with the not-sent CDA.</t>
 
-<t>Checksum can be reconstructed with the compute-checksum CDA and therefore is not transmitted.</t>
+<t>Checksum can be reconstructed with the compute-* CDA and therefore is not transmitted.</t>
 
-<t><xref target="RFC4443"/> states that Identifier and Sequence Number are meant to
-“aid in matching Echo Replies to this Echo Request” and that they “may be zero”.
-Data is “zero or more bytes of arbitrary data”.</t>
+<t><xref target="RFC4443"/> states that the identifier and sequence number are meant to
+“help in matching Echo Responses to this Echo Request” and that they “may be zero”.
+Data are "zero or more bytes of arbitrary data”.</t>
 
-<t>For constrained devices or networks, we recommend that Identifier be zero, Sequence Number 
-be a counter on 3 bits, and Data be zero bytes (absent). Therefore, Identifier is elided with the 
+<t>For constrained devices or networks, we recommend that the Identifier be zero, the Sequence Number
+be a counter on 3 bits, and the Data be zero bytes (absent). Therefore, Identifier is elided with the 
 not-sent CDA, Sequence Number is transmitted on 3 bits with the LSB CDA and no Data is transmitted.</t>
 
-<t>The transmission cost of the Echo Request message is therefore the size of the Rule Id + 3 bits. The rule ID length
-can be chosen to avoid adding padding. </t>
+<t>The data part is defined in the rule through the ICMPv6 Payload field. The payload can be sent as 
+a residue with a value-sent. It is also possible to elide the data by setting them in the Target 
+Value and use a not-sent CDA.</t>
 
-<t>When the destination receives the Echo Request message, it will respond back with a Echo Reply message.
+
+<t>When the destination receives the Echo Request message, it will respond with an Echo Reply message.
 This message bears the same format as the Echo Request message but with Type = 129
 (see <xref target="Fig-ICMPv6-Echo-Request"/>).</t>
 
-<t><xref target="RFC4443"/> states that the Identifier, Sequence Number and Data fields of the Echo Reply 
-message shall contain the same values as the invoking Echo Request message. Therefore, a rule shall be used 
+<t><xref target="RFC4443"/> states that the Identifier, Sequence Number, and Data fields of the Echo Reply
+message shall contain the same values as the invoking Echo Request message. Therefore, a rule shall be used
 similar to that used for compressing the Echo Request message.</t>
-
-<!--
-  <t>TODO: how about a shared rule for Echo Request and Echo Reply with an LSB(1) CDA on the Type field? Or exploiting the Up/Down direction field in the rule?</t>
--->
 
 <section anchor="rule-example" title="Rule example">
 
@@ -385,9 +422,23 @@ allowing a serie of 255 consecutive pings.</t>
       <td align="left"></td>
       <td align="left">3</td>
     </tr>
+    <tr>
+      <td align="left">ICMPv6 Payload</td>
+      <td align="left">var</td>
+      <td align="left">1</td>
+      <td align="left">Bi</td>
+      <td align="left">0</td>
+      <td align="left">ignore</td>
+      <td align="left">value-sent</td>
+      <td align="left"></td>
+      <td align="left">X</td>
+    </tr>
   </tbody>
 </table>
 
+<t>The transmission cost of the Echo Request message is therefore the size of the Rule Id + 3 bits and 
+the data size increased of the Payload residue size. The rule ID Length
+can be chosen to avoid adding padding. </t>
 <!--figure title="Example of compression rule for a ping from the device" anchor="Fig-ping-up"><artwork><![CDATA[
 
  | Field          |FL|FP|DI| Value   | Match  | Comp Decomp|| Sent |
@@ -401,11 +452,12 @@ allowing a serie of 255 consecutive pings.</t>
  +================+==+==+==+=========+========+============++======+
 ]]></artwork></figure-->
 
-<t>NOTE: Add an example where the Payload is also compressed. </t>
+<!--<t>NOTE: Add an example where the Payload is also compressed. </t>-->
 
 </section>
 </section>
 
+<!--
 <section anchor="device-is-pinged" title="Device is ping'ed">
 
 <t>If the Device is ping’ed (i.e., is the destination of an Echo Request message), the 
@@ -415,7 +467,7 @@ the compression scheme.</t>
 
 
 </section>
-
+-->
 
 <section anchor="ProxyErrMsg" title="Device is the source of an ICMPv6 error message">
 
@@ -423,10 +475,10 @@ the compression scheme.</t>
 IPv6 packet that is malformed or which cannot be processed due to some incorrect field value.</t>
 
 <t>The general intent of this document is to spare both the Device and the LPWAN network this un-necessary traffic.
-The incorrect packets should be caught at the core SCHC and the ICMPv6 notification should be sent back from there.</t>
+The incorrect packets should be caught at the SCHC Core and the ICMPv6 notification should be sent back from there.</t>
 
 <figure title="Example of ICMPv6 error message sent back to the Internet" anchor="Fig-ICMPv6-up"><artwork><![CDATA[
-     Device       NGW     core SCHC                    Internet Host
+     Device       NGW     SCHC Core                    Internet Host
 
        |           |            |    Destination Port=XXX    |
        |           |            |<---------------------------|
@@ -442,13 +494,13 @@ The incorrect packets should be caught at the core SCHC and the ICMPv6 notificat
 <t><xref target="Fig-ICMPv6-up"/> shows an example of an IPv6 packet trying to reach a Device. </t>
 
 <!-- Let’s assume that the port number used
-as destination port is not “known” (needs better definition) from the core SCHC. 
+as destination port is not “known” (needs better definition) from the SCHC Core. 
 -->
 
 <t>Let's assume that no rule matches the incoming packet (i.e. there is no co-compression rule)</t>
 
 <t>Instead of sending the packet over
-the LPWAN and having this packet rejected by the Device, the core SCHC issues
+the LPWAN and having this packet rejected by the Device, the SCHC Core issues
 an ICMPv6 error message “Destination Unreachable” (Type 1) with Code 1 (“Port Unreachable”) on behalf of the Device.</t>
 
 <t>In that case the SCHC C/D MAY act as a router (i.e. it MUST have a routable IPv6 address to generate
@@ -460,7 +512,7 @@ an ICMPv6 message). When compressing a packet containing an IPv6 header, no comp
   <li> a device IPv6 address is found, but no port matches,  a port unreachable ICMPv6  message (type 0, code 4) may be generated,</li>
   <li> if the incoming packet is too large for any of the fragmentation rules, an ICMPv6 Message Too big MAY be generated with the largest size allowaed by the fragmentation rules.</li>
 </ul>
-<!-- LT: I suppress type 0 code 0, if the packet arrives to the core SCHC, this means that there is a correct prefix. -->
+<!-- LT: I suppress type 0 code 0, if the packet arrives to the SCHC Core, this means that there is a correct prefix. -->
 <!--
   <t>TODO: This assumes that all ports that the Device listens to will be matched by a SCHC rule. Is this the basic assumption of SCHC that all packets that do not match a rule are rejected? If yes, why do have fragmentation also for uncompressed packets?</t>
 -->
@@ -469,16 +521,22 @@ an ICMPv6 message). When compressing a packet containing an IPv6 header, no comp
 -->
 </section>
 
-<section anchor="device-is-the-destination-of-an-icmpv6-error-message" title="Device is the destination of an ICMPv6 error message">
+<section anchor="device-is-the-destination" title="Device is the destination of an ICMPv6 error message">
 
-<t>In this situation, we assume that a Device has been configured to send information to a server on the Internet. If this
-server becomes no longer accessible, an ICMPv6 message will be generated back towards the Device by either an intermediate router or the destination.
-This information can be useful to the Device, for example for reducing the reporting rate in case of periodic reporting of data.
-Therefore, we compress the ICMPv6 message using SCHC and forward it to the Device over the LPWAN. We also introduce new MO and CDA
-that can be used to test the presence and/or compress the returning payload.</t>
+<t>In this situation, a Device has been configured to send information to a server on the Internet. If this
+server becomes no longer accessible, an ICMPv6 message will be generated back towards the Device by either
+an intermediate router or the destination.
+This information can be useful to the Device, for example, for reducing the reporting rate in case of periodic
+reporting of data.</t>
+
+<t>
+Therefore, the ICMPv6 error message should reach the Device. The data inside this error message includes 
+the packet at the origin of the error. It should be compressed by the SCHC Core, but in the reverse direction. 
+New MOs and CDAs are introduced to perform this operation. The MO check is a rule that matches the Target Value 
+in the forward or reverse direction and the CDA performs this compression.</t>
 
 <figure title="Example of ICMPv6 error message sent back to the Device" anchor="Fig-ICMPv6-down"><artwork><![CDATA[
-     Device       NGW     core SCHC                    Internet Server
+     Device       NGW     SCHC Core                    Internet Server
 
        |           |            |                            |
        | SCHC compressed IPv6   |                            |
@@ -496,10 +554,30 @@ that can be used to test the presence and/or compress the returning payload.</t>
 as described in <xref target="ErrMsgCompr"/> and forwarded over the LPWAN to the Device.</t>
 
 <t>The SCHC returning message contains the SCHC residue of the ICMPv6 message and MAY contain the
-compressed original message contained in the ICMP message. The compression can be done by the core SCHC
+compressed original message contained in the ICMP message. The compression can be done by the SCHC Core
 by reversing the direction as if this message was issued by the device.</t>
 
-<section anchor="ErrMsgCompr" title="ICMPv6 error message compression.">
+<section anchor="newMO" title="Matching Operator rule match and reverse rule match.">
+<t>If the Target Value contains a header, this matching operator returns True if a Rule exists in the 
+current Set of Rule to compress it. The selection can either be done:</t>
+
+<ul>
+<li> in the same direction of the End-Point, this can be used to compress a protocol encapsulated in the header. </li>
+<li> in the reverse direction of the end point, as in an ICMPv6 error message. </li>
+
+</ul>
+</section>
+
+<section anchor="newCDA" title="Compression Decompression Actions to compress Target Values.">
+<t>These CDAs compress-sent and rev-compress-sent compress the Target Value using rules defined in the current 
+Set of Rules. This CDA MUST be used in conjunction 
+with the Matching Operators defined in <xref target="newMO"/> according to the direction.  
+The compression is using the same direction as the End-Point, the reverse compression uses the opposite direction.</t>
+
+</section>
+
+
+<section anchor="ErrMsgCompr" title="Example of ICMPv6 error message compression.">
 
 <t>The ICMPv6 error messages defined in <xref target="RFC4443"/> contain the fields shown in
 <xref target="Fig-ICMP-error"/>.</t>
@@ -520,8 +598,7 @@ by reversing the direction as if this message was issued by the device.</t>
 
 <t><xref target="RFC4443"/> states that Type can take the values 1 to 4, and Code can be set to values between 0 and 6.
 Value is unused for the Destination Unreachable and Time Exceeded messages. It contains the MTU for
-the Packet Too Big message and a pointer to the byte causing the error for the Parameter Error message.
-Therefore, Value is never expected to be greater than 1280 in LPWAN networks.</t>
+the Packet Too Big message and a pointer to the byte causing the error for the Parameter Error message.</t>
 
 <t>The payload is viewed as a field. An unsued field MUST not appear in the compressoin rules.</t>
 
@@ -530,7 +607,7 @@ Therefore, Value is never expected to be greater than 1280 in LPWAN networks.</t
 <t>The following generic rule can therefore be used to compress all ICMPv6 error messages as defined today.
 More specific rules can also be defined to achieve better compression of some error messages.</t>
 
-<t>The Type field can be associated to a matching list [1, 2, 3, 4] and is therefore compressed down to 2
+<t>The Type field can be associated with a matching list [1, 2, 3, 4] and is therefore compressed to 2
 bits. Code can be reduced to 3 bits using the LSB CDA. Value can be sent on 11 bits using the LSB
 CDA, but if the Device is known to send smaller packets, then the size of this field can
 be further reduced.</t>
@@ -590,8 +667,8 @@ be further reduced.</t>
   </tbody>
 </table>
 
-<t>The second rule example <xref target="Fig-icmp-error2"/> also only sends the ICMP type and code as residue to the device, 
-but it introduces the new MO "rev-rule-match". This MO will check if a rule matches the payload. </t>
+<t>The second rule example <xref target="Fig-icmp-error2"/> also only sends the ICMP type and code as 
+residue to the device, but introduces the new MO "rev-rule match". This MO will check if a rule matches the payload. </t>
 
 <table anchor="Fig-icmp-error2" align="center">
   <name>Example of compression rule for a ICMP error to a device</name>
@@ -646,14 +723,17 @@ but it introduces the new MO "rev-rule-match". This MO will check if a rule matc
   </tbody>
 </table>
 
-<t>By <xref target="RFC4443"/>, the rest of the ICMPv6 message must contain as much as possible of the IPv6 offending (invoking) packet that triggered
+<t>By <xref target="RFC4443"/>, the rest of the ICMPv6 message must contain as much as possible of 
+the IPv6 offending (invoking) packet that triggered
 this ICMPv6 error message. This information is used to try and identify the SCHC rule that
-was used to decompress the offending IPv6 packet. If the rule can be found then the Rule Id
-is added at the end of the compressed ICMPv6 message. Otherwise the compressed
+was used to decompress the offending IPv6 packet. If the rule can be found, then the Rule Id
+is added at the end of the compressed ICMPv6 message. Otherwise, the compressed
 packet ends with the compressed Value field.</t>
 
-<t>The third rule example <xref target="Fig-icmp-error3"/> also sends the ICMP type, code and the compresssed payload as residue.
-It can be noted that this field is identified as "variable" in the rule which will introduce a size before the IPv6 compressed header. </t>
+<t>The third rule example <xref target="Fig-icmp-error3"/> also sends the ICMP type, code, and the compresssed payload 
+as residue.
+It can be noted that this field is identified as "variable" in the rule, which will introduce a size before the IPv6 
+compressed header. </t>
 
 <table anchor="Fig-icmp-error3" align="center">
   <name>Example of compression rule for a ICMP error to a device</name>
@@ -708,21 +788,11 @@ It can be noted that this field is identified as "variable" in the rule which wi
   </tbody>
 </table>
 
-<!---
-<t><xref target="RFC4443"/> states that the “ICMPv6 error message MUST include as much
-of the IPv6 offending (invoking) packet … as possible”.
-In order to comply with this requirement, if there is enough information in the incoming ICMPv6 message for the core SCHC to
-identify the rule that has been used to decompress the erroneous IPv6 packet, this Rule Id must be
-sent in the compressed ICMPv6 message to the Device.
-TODO: the erroneous IPv6 packet header (not just the Rule Id) should be sent back. This includes the Rule Id and the compression residue. This means the SCHC C/D uses the context backwards (in the reverse direction). How does the Device know it must also use the context backwards?</t>
 
-<t>TODO: how does one know that the “payload” of a compressed-header packet is in fact another compressed header?</t>
--->
-<t>LT: do we add packet too big, for instance if a fragmentation rule cannot handle a size larger than 1280?</t>
 </section>
 </section>
 
-</section>
+<!--</section>-->
 
 
 <section anchor="yang-tree" title="YANG identities and tree">
