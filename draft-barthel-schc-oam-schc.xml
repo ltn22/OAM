@@ -173,8 +173,8 @@ connectivity with a  remote node.</t>
 <ul>
   <li>Destination Unreachable (type = 1),</li>
   <li>Packet Too Big (type = 2), </li> 
-  <li> Time Exceeded and </li>
-  <li>Parameter Problem.</li>
+  <li> Time Exceeded (type = 3) and </li>
+  <li>Parameter Problem (type = 4).</li>
 </ul>
 <t><xref target="RFC4443"/> also defines two informational messages,  
 the Echo Request (type=128) and Echo Reply messages (type = 129), which provide support for the ping application.</t>
